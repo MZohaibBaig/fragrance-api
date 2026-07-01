@@ -17,7 +17,7 @@ class FormulaIngredientSerializer(serializers.ModelSerializer):
         model = FormulaIngredient
         fields = ['id', 'ingredient', 'ingredient_name', 'percentage', 'quantity_in_grams']
 
-    def get_quantity_in_grams(self, obj):
+    def get_quantity_in_grams(self, obj: FormulaIngredient) -> float:
         return round((obj.percentage / 100) * obj.formula.batch_size_ml, 2)
 
 
