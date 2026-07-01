@@ -9,7 +9,6 @@
 
 A REST API for managing fragrance formulations built with Django, Django REST Framework, and PostgreSQL.
 
-<!-- REVIEW: confirm/replace -->
 Built to model how a fragrance formulator actually tracks work: raw ingredients with supplier/COA data, formulas built from those ingredients at precise percentages, and the batch quantities that follow from them. Each user's ingredients and formulas are isolated from every other user's.
 
 ## Features
@@ -28,13 +27,30 @@ Built to model how a fragrance formulator actually tracks work: raw ingredients 
 
 ## Setup
 
+Clone and enter the project:
+
 ```bash
 git clone https://github.com/MZohaibBaig/fragrance-api.git
 cd fragrance-api
 python -m venv venv
-venv\Scripts\activate  # on Windows; use `source venv/bin/activate` on macOS/Linux
+```
+
+Activate the virtual environment:
+
+```bash
+# Windows (PowerShell / cmd)
+venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+Install dependencies, configure environment, and run:
+
+```bash
 pip install -r requirements.txt
-cp .env.example .env  # then fill in your real SECRET_KEY and DB credentials
+cp .env.example .env    # Windows: copy .env.example .env
+# then open .env and fill in your real SECRET_KEY and DB credentials
 python manage.py migrate
 python manage.py runserver
 ```
@@ -144,6 +160,9 @@ Response `200 OK`:
   ]
 }
 ```
+
+> `quantity_in_grams` is a read-only computed field: `percentage / 100 × batch_size_ml`
+> (here `12.50% × 200.00 ml = 25.00`). It is derived on read, never sent by the client.
 
 ## Running Tests
 
