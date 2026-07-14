@@ -106,6 +106,16 @@ pre-commit install
 
 `pre-commit` then runs `ruff check --fix` and `ruff format` on every commit. Run it against the whole tree any time with `pre-commit run --all-files`.
 
+## Demo data
+
+Populate a user's account with realistic sample ingredients and recipes (idempotent — safe to re-run):
+
+```bash
+python manage.py seed_demo --user <username>
+```
+
+Seeds ~12 perfumery materials (Bergamot, Hedione, Ambroxan, Vetiver, ...) and 3 invented recipes at different concentrations, each with proportions summing to 100.
+
 ## API Docs
 
 Interactive Swagger UI is served at `/api/docs/` (raw OpenAPI schema at `/api/schema/`) once the server is running — a quicker way to explore/try requests than this table.

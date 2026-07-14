@@ -3,9 +3,10 @@ import logging
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import QuerySet
+from django.db.models import ProtectedError, QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions, serializers, viewsets
+from rest_framework import generics, permissions, serializers, status, viewsets
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.throttling import AnonRateThrottle
 
@@ -34,6 +35,24 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         serializer.save(owner=self.request.user)
+
+    def destroy(self, request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        try:
+            instance.delete()
+        except ProtectedError as exc:
+            recipe_names = set()
+            for obj in exc.protected_objects:
+                recipe = getattr(obj, 'recipe', None) or getattr(getattr(obj, 'batch', None), 'recipe', None)
+                if recipe is not None:
+                    recipe_names.add(recipe.name)
+            if recipe_names:
+                names = ', '.join(sorted(recipe_names))
+                detail = f"Cannot delete '{instance.name}': still used in {names}."
+            else:
+                detail = f"Cannot delete '{instance.name}': it is still in use."
+            return Response({'detail': detail}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
