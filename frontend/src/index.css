@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-surface: #17140f;
+  --color-surface-raised: #221d16;
+  --color-border: #3a3226;
+  --color-ink: #e8e1d4;
+  --color-ink-muted: #a89d89;
+  --color-accent: #c9884f;
+  --color-accent-ink: #17140f;
+  --color-danger: #c4544a;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+#root {
+  min-height: 100svh;
+}
