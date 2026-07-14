@@ -1,0 +1,26 @@
+[tool.ruff]
+line-length = 119
+target-version = "py313"
+exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "DJ",  # flake8-django
+]
+ignore = [
+    "E501",  # line length is enforced by the formatter, not the linter
+    "DJ001", # null=True on CharField/TextField is an established pattern in this
+             # codebase predating ruff; changing it means new migrations, not a lint fix
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "formulations"]
+
+[tool.ruff.format]
+quote-style = "single"
