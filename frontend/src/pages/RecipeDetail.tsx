@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRecipe, updateRecipe, addRecipeIngredient, deleteRecipeIngredient } from '../api/recipes'
@@ -33,12 +33,14 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
   const [justSaved, setJustSaved] = useState(false)
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  if (recipe && name === null) {
-    setName(recipe.name)
-    setDescription(recipe.description ?? '')
-    setConcentration(recipe.default_concentration)
-    setDiluentName(recipe.diluent_name ?? '')
-  }
+  useEffect(() => {
+    if (recipe && name === null) {
+      setName(recipe.name)
+      setDescription(recipe.description ?? '')
+      setConcentration(recipe.default_concentration)
+      setDiluentName(recipe.diluent_name ?? '')
+    }
+  }, [recipe, name])
 
   const saveMutation = useMutation({
     mutationFn: () =>

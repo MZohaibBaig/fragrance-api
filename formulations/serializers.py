@@ -171,7 +171,8 @@ class BatchSerializer(serializers.ModelSerializer):
 
     def get_maceration_progress(self, obj: Batch) -> str:
         progress = (Decimal(self.get_days_macerating(obj)) / obj.maceration_days) * 100
-        return str(min(Decimal('100'), progress).quantize(DISPLAY_PRECISION))
+        clamped = max(Decimal('0'), min(Decimal('100'), progress))
+        return str(clamped.quantize(DISPLAY_PRECISION))
 
     def get_is_due(self, obj: Batch) -> bool:
         return self.get_days_macerating(obj) >= obj.maceration_days and obj.status == Batch.STATUS_MACERATING
