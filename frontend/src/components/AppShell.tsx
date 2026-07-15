@@ -30,6 +30,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink to="/recipes" className={navLinkClass}>
               Recipes
             </NavLink>
+            <NavLink to="/batches" className={navLinkClass}>
+              Batches
+            </NavLink>
           </nav>
         </div>
         {user && (
