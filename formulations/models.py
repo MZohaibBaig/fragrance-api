@@ -3,7 +3,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,10 @@ class Batch(models.Model):
         proportions_total = sum((ri.proportion for ri in recipe_ingredients), Decimal('0'))
         self.recipe_was_balanced = proportions_total == Decimal('100')
 
-        self.save(update_fields=['aromatic_g', 'diluent_g', 'recipe_was_balanced'])
+        with transaction.atomic():
+            self.save(update_fields=['aromatic_g', 'diluent_g', 'recipe_was_balanced'])
+            self.ingredients.all().delete()
+            self._create_ingredient_breakdown(recipe_ingredients)
 
         logger.info(
             'Computed batch %s (recipe=%s, batch_size_g=%s): aromatic_g=%s diluent_g=%s balanced=%s',
@@ -165,7 +168,7 @@ class Batch(models.Model):
                 self.recipe_id,
             )
 
-        self.ingredients.all().delete()
+    def _create_ingredient_breakdown(self, recipe_ingredients: list['RecipeIngredient']) -> None:
         rows = []
         allocated = Decimal('0')
         last_index = len(recipe_ingredients) - 1

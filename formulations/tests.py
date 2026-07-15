@@ -1,12 +1,13 @@
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Batch, Ingredient, Recipe, RecipeIngredient
+from .models import Batch, BatchIngredient, Ingredient, Recipe, RecipeIngredient
 
 
 class AuthenticationTests(APITestCase):
@@ -193,6 +194,36 @@ class GramMathTests(APITestCase):
             breakdown_total = sum((row.grams for row in batch.ingredients.all()), Decimal('0'))
             self.assertEqual(breakdown_total, batch.aromatic_g)
 
+    def test_compute_is_atomic_on_mid_failure(self) -> None:
+        recipe = Recipe.objects.create(owner=self.user, name='Atomic Check', default_concentration=Decimal('20'))
+        RecipeIngredient.objects.create(recipe=recipe, ingredient=self.oil_a, proportion=Decimal('100'))
+
+        batch = Batch.objects.create(
+            owner=self.user,
+            recipe=recipe,
+            batch_size_g=Decimal('40'),
+            concentration=Decimal('20'),
+            maceration_days=28,
+            made_on=timezone.localdate(),
+        )
+        batch.compute()
+        original_aromatic_g = batch.aromatic_g
+        original_diluent_g = batch.diluent_g
+
+        recipe.default_concentration = Decimal('90')
+        recipe.save()
+        batch.concentration = Decimal('90')
+
+        with patch.object(BatchIngredient.objects, 'bulk_create', side_effect=RuntimeError('boom')):
+            with self.assertRaises(RuntimeError):
+                batch.compute()
+
+        batch.refresh_from_db()
+        self.assertEqual(batch.aromatic_g, original_aromatic_g)
+        self.assertEqual(batch.diluent_g, original_diluent_g)
+        self.assertEqual(batch.ingredients.count(), 1)
+        self.assertEqual(batch.ingredients.get().grams, original_aromatic_g)
+
     def test_batch_survives_later_recipe_edits(self) -> None:
         recipe = Recipe.objects.create(owner=self.user, name='Evolving', default_concentration=Decimal('20'))
         RecipeIngredient.objects.create(recipe=recipe, ingredient=self.oil_a, proportion=Decimal('100'))
@@ -328,6 +359,11 @@ class MacerationTests(APITestCase):
         response = self.client.get(f'/api/batches/{batch.id}/')
         self.assertFalse(response.data['is_due'])
         self.assertEqual(response.data['days_remaining'], 18)
+
+    def test_maceration_progress_clamped_at_zero_for_future_made_on(self) -> None:
+        batch = self._make_batch(made_on=timezone.localdate() + timedelta(days=5))
+        response = self.client.get(f'/api/batches/{batch.id}/')
+        self.assertEqual(response.data['maceration_progress'], '0.00')
 
     def test_is_due_filter_matches_serializer_is_due(self) -> None:
         due_batch = self._make_batch(made_on=timezone.localdate() - timedelta(days=30))
