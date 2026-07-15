@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRecipe, updateRecipe, addRecipeIngredient, deleteRecipeIngredient } from '../api/recipes'
@@ -28,6 +28,8 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
   const [diluentName, setDiluentName] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
+  const [justSaved, setJustSaved] = useState(false)
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   if (recipe && name === null) {
     setName(recipe.name)
@@ -49,11 +51,15 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
       setFieldErrors({})
       setFormError(null)
+      setJustSaved(true)
+      clearTimeout(savedTimeoutRef.current)
+      savedTimeoutRef.current = setTimeout(() => setJustSaved(false), 2000)
     },
     onError: (error) => {
       const parsed = parseApiError(error)
       setFieldErrors(parsed.fieldErrors ?? {})
       setFormError(formLevelError(parsed))
+      setJustSaved(false)
     },
   })
 
@@ -66,6 +72,8 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
   const [proportion, setProportion] = useState('')
   const [addFieldErrors, setAddFieldErrors] = useState<FieldErrors>({})
   const [addFormError, setAddFormError] = useState<string | null>(null)
+  const [justAdded, setJustAdded] = useState(false)
+  const addedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const addMutation = useMutation({
     mutationFn: () =>
@@ -76,18 +84,38 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
       setProportion('')
       setAddFieldErrors({})
       setAddFormError(null)
+      setJustAdded(true)
+      clearTimeout(addedTimeoutRef.current)
+      addedTimeoutRef.current = setTimeout(() => setJustAdded(false), 2000)
     },
     onError: (error) => {
       const parsed = parseApiError(error)
       setAddFieldErrors(parsed.fieldErrors ?? {})
       setAddFormError(formLevelError(parsed))
+      setJustAdded(false)
     },
   })
 
+  const [removingId, setRemovingId] = useState<number | null>(null)
+  const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null)
+
   const removeMutation = useMutation({
     mutationFn: (recipeIngredientId: number) => deleteRecipeIngredient(recipeIngredientId),
+    onMutate: (recipeIngredientId: number) => {
+      setRemovingId(recipeIngredientId)
+      setRemoveError(null)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes', recipeId] })
+    },
+    onError: (error, recipeIngredientId) => {
+      setRemoveError({
+        id: recipeIngredientId,
+        message: parseApiError(error).detail ?? "Couldn't remove this ingredient.",
+      })
+    },
+    onSettled: () => {
+      setRemovingId(null)
     },
   })
 
@@ -171,10 +199,11 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
           </div>
         </div>
         {formError && <p className="text-danger text-sm">{formError}</p>}
-        <div>
+        <div className="flex items-center gap-3">
           <button type="submit" disabled={saveMutation.isPending} className={primaryButtonClass}>
             {saveMutation.isPending ? 'Saving…' : 'Save changes'}
           </button>
+          {justSaved && <span className="text-ink-muted text-sm">Saved</span>}
         </div>
       </form>
 
@@ -193,22 +222,22 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
         {recipe.recipe_ingredients.length > 0 && (
           <ul className="mb-4 flex flex-col gap-2">
             {recipe.recipe_ingredients.map((ri) => (
-              <li
-                key={ri.id}
-                className="border-border flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-              >
-                <span className="text-ink">{ri.ingredient_name}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-ink-muted">{ri.proportion}%</span>
-                  <button
-                    type="button"
-                    onClick={() => removeMutation.mutate(ri.id)}
-                    disabled={removeMutation.isPending}
-                    className="text-danger text-xs"
-                  >
-                    Remove
-                  </button>
+              <li key={ri.id} className="border-border rounded-md border px-3 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink">{ri.ingredient_name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-ink-muted">{ri.proportion}%</span>
+                    <button
+                      type="button"
+                      onClick={() => removeMutation.mutate(ri.id)}
+                      disabled={removingId === ri.id}
+                      className="text-danger text-xs"
+                    >
+                      {removingId === ri.id ? 'Removing…' : 'Remove'}
+                    </button>
+                  </div>
                 </div>
+                {removeError?.id === ri.id && <p className="text-danger mt-1 text-xs">{removeError.message}</p>}
               </li>
             ))}
           </ul>
@@ -253,6 +282,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
           >
             {addMutation.isPending ? 'Adding…' : 'Add'}
           </button>
+          {justAdded && <span className="text-ink-muted text-sm">Added</span>}
         </form>
         {addFormError && <p className="text-danger mt-2 text-sm">{addFormError}</p>}
         {ingredientsQuery.data && ingredientsQuery.data.length > 0 && availableIngredients.length === 0 && (
