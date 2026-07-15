@@ -368,4 +368,46 @@ class RegistrationTests(APITestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class IngredientDeleteProtectionTests(APITestCase):
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(username='formulator', password='password123')
+        self.client.force_authenticate(user=self.user)
+        self.ingredient = Ingredient.objects.create(owner=self.user, name='Bergamot')
+
+    def test_deleting_an_unused_ingredient_succeeds(self) -> None:
+        response = self.client.delete(f'/api/ingredients/{self.ingredient.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Ingredient.objects.filter(id=self.ingredient.id).exists())
+
+    def test_deleting_an_ingredient_used_in_a_recipe_returns_400_naming_the_recipe(self) -> None:
+        recipe = Recipe.objects.create(owner=self.user, name='Citrus Bloom', default_concentration=Decimal('20'))
+        RecipeIngredient.objects.create(recipe=recipe, ingredient=self.ingredient, proportion=Decimal('100'))
+
+        response = self.client.delete(f'/api/ingredients/{self.ingredient.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('detail', response.data)
+        self.assertIn('Citrus Bloom', response.data['detail'])
+        self.assertTrue(Ingredient.objects.filter(id=self.ingredient.id).exists())
+
+    def test_deleting_an_ingredient_used_in_a_batch_returns_400(self) -> None:
+        recipe = Recipe.objects.create(owner=self.user, name='Citrus Bloom', default_concentration=Decimal('20'))
+        RecipeIngredient.objects.create(recipe=recipe, ingredient=self.ingredient, proportion=Decimal('100'))
+        batch = Batch.objects.create(
+            owner=self.user,
+            recipe=recipe,
+            batch_size_g=Decimal('40'),
+            concentration=Decimal('20'),
+            maceration_days=28,
+            made_on=timezone.localdate(),
+        )
+        batch.compute()
+
+        response = self.client.delete(f'/api/ingredients/{self.ingredient.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Citrus Bloom', response.data['detail'])
+        self.assertTrue(Ingredient.objects.filter(id=self.ingredient.id).exists())
         self.assertFalse(User.objects.filter(username='new_perfumer').exists())
