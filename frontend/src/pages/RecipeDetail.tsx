@@ -5,7 +5,9 @@ import { getRecipe, updateRecipe, addRecipeIngredient, deleteRecipeIngredient } 
 import { listIngredients } from '../api/ingredients'
 import { parseApiError, formLevelError, type FieldErrors } from '../api/errors'
 import { FieldError } from '../components/FieldError'
-import { inputClass, labelClass, primaryButtonClass } from '../components/formStyles'
+import { Card } from '../components/Card'
+import { Spinner } from '../components/Spinner'
+import { ghostButtonClass, inputClass, labelClass, primaryButtonClass } from '../components/formStyles'
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -127,7 +129,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
   }
 
   if (recipeQuery.isLoading) {
-    return <p className="text-ink-muted text-sm">Loading…</p>
+    return <Spinner />
   }
   if (recipeQuery.isError || !recipe) {
     return <p className="text-danger text-sm">Couldn't load this recipe.</p>
@@ -138,77 +140,75 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => navigate('/recipes')}
-        className="text-ink-muted hover:text-ink mb-4 text-sm"
-      >
+      <button type="button" onClick={() => navigate('/recipes')} className={`${ghostButtonClass} mb-4`}>
         ← Recipes
       </button>
 
-      <form onSubmit={handleSaveFields} noValidate className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="recipe-name" className={labelClass}>
-            Name
-          </label>
-          <input
-            id="recipe-name"
-            value={name ?? ''}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-          />
-          <FieldError messages={fieldErrors.name} />
-        </div>
-        <div>
-          <label htmlFor="recipe-description" className={labelClass}>
-            Description
-          </label>
-          <textarea
-            id="recipe-description"
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className={inputClass}
-          />
-          <FieldError messages={fieldErrors.description} />
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label htmlFor="recipe-concentration" className={labelClass}>
-              Default concentration (%)
+      <Card className="p-5">
+        <form onSubmit={handleSaveFields} noValidate className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="recipe-name" className={labelClass}>
+              Name
             </label>
             <input
-              id="recipe-concentration"
-              value={concentration}
-              onChange={(e) => setConcentration(e.target.value)}
+              id="recipe-name"
+              value={name ?? ''}
+              onChange={(e) => setName(e.target.value)}
               className={inputClass}
             />
-            <FieldError messages={fieldErrors.default_concentration} />
+            <FieldError messages={fieldErrors.name} />
           </div>
-          <div className="flex-1">
-            <label htmlFor="recipe-diluent" className={labelClass}>
-              Diluent
+          <div>
+            <label htmlFor="recipe-description" className={labelClass}>
+              Description
             </label>
-            <input
-              id="recipe-diluent"
-              value={diluentName}
-              onChange={(e) => setDiluentName(e.target.value)}
+            <textarea
+              id="recipe-description"
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className={inputClass}
             />
-            <FieldError messages={fieldErrors.diluent_name} />
+            <FieldError messages={fieldErrors.description} />
           </div>
-        </div>
-        {formError && <p className="text-danger text-sm">{formError}</p>}
-        <div className="flex items-center gap-3">
-          <button type="submit" disabled={saveMutation.isPending} className={primaryButtonClass}>
-            {saveMutation.isPending ? 'Saving…' : 'Save changes'}
-          </button>
-          {justSaved && <span className="text-ink-muted text-sm">Saved</span>}
-        </div>
-      </form>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex-1">
+              <label htmlFor="recipe-concentration" className={labelClass}>
+                Default concentration (%)
+              </label>
+              <input
+                id="recipe-concentration"
+                value={concentration}
+                onChange={(e) => setConcentration(e.target.value)}
+                className={inputClass}
+              />
+              <FieldError messages={fieldErrors.default_concentration} />
+            </div>
+            <div className="flex-1">
+              <label htmlFor="recipe-diluent" className={labelClass}>
+                Diluent
+              </label>
+              <input
+                id="recipe-diluent"
+                value={diluentName}
+                onChange={(e) => setDiluentName(e.target.value)}
+                className={inputClass}
+              />
+              <FieldError messages={fieldErrors.diluent_name} />
+            </div>
+          </div>
+          {formError && <p className="text-danger text-sm">{formError}</p>}
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={saveMutation.isPending} className={primaryButtonClass}>
+              {saveMutation.isPending ? 'Saving…' : 'Save changes'}
+            </button>
+            {justSaved && <span className="text-ink-muted text-sm">Saved</span>}
+          </div>
+        </form>
+      </Card>
 
-      <section className="border-border mt-8 rounded-lg border p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <Card className="mt-8 p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-ink text-lg font-medium">Ingredients</h2>
           <span className={recipe.is_balanced ? 'text-ink-muted text-sm' : 'text-danger text-sm'}>
             Proportions total {recipe.proportions_total}%{!recipe.is_balanced && ' — must reach 100'}
@@ -222,7 +222,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
         {recipe.recipe_ingredients.length > 0 && (
           <ul className="mb-4 flex flex-col gap-2">
             {recipe.recipe_ingredients.map((ri) => (
-              <li key={ri.id} className="border-border rounded-md border px-3 py-2 text-sm">
+              <li key={ri.id} className="border-border rounded-field border px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ink">{ri.ingredient_name}</span>
                   <div className="flex items-center gap-3">
@@ -288,7 +288,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: number }) {
         {ingredientsQuery.data && ingredientsQuery.data.length > 0 && availableIngredients.length === 0 && (
           <p className="text-ink-muted mt-2 text-sm">All ingredients are already in this recipe.</p>
         )}
-      </section>
+      </Card>
     </div>
   )
 }

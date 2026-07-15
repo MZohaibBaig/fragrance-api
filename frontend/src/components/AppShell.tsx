@@ -17,10 +17,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="border-border flex items-center justify-between border-b px-6 py-4">
-        <div className="flex items-center gap-6">
+      <header className="border-border bg-surface sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <span className="text-ink text-lg font-medium tracking-tight">Fragrance Lab</span>
-          <nav className="flex items-center gap-4">
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <NavLink to="/" end className={navLinkClass}>
               Dashboard
             </NavLink>
@@ -41,14 +41,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={handleLogout}
-              className="text-ink-muted hover:text-ink border-border hover:border-ink-muted rounded-md border px-3 py-1.5 text-sm transition-colors"
+              className="text-ink-muted hover:text-ink border-border hover:border-ink-muted rounded-field border px-3 py-1.5 text-sm transition-colors"
             >
               Log out
             </button>
           </div>
         )}
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">{children}</main>
     </div>
   )
 }

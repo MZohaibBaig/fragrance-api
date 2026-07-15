@@ -6,7 +6,9 @@ import { listRecipes } from '../api/recipes'
 import { computeBatchPreview } from '../lib/batchMath'
 import { parseApiError, formLevelError, type FieldErrors } from '../api/errors'
 import { FieldError } from '../components/FieldError'
-import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from '../components/formStyles'
+import { Card } from '../components/Card'
+import { Spinner } from '../components/Spinner'
+import { ghostButtonClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from '../components/formStyles'
 
 export function BatchNewPage() {
   const navigate = useNavigate()
@@ -66,115 +68,113 @@ export function BatchNewPage() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => navigate('/batches')}
-        className="text-ink-muted hover:text-ink mb-4 text-sm"
-      >
+      <button type="button" onClick={() => navigate('/batches')} className={`${ghostButtonClass} mb-4`}>
         ← Batches
       </button>
 
       <h1 className="text-ink mb-6 text-2xl font-medium tracking-tight">New batch</h1>
 
-      {isLoading && <p className="text-ink-muted text-sm">Loading recipes…</p>}
+      {isLoading && <Spinner />}
       {isError && <p className="text-danger text-sm">Couldn't load recipes.</p>}
 
       {recipes && (
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="batch-recipe" className={labelClass}>
-              Recipe
-            </label>
-            <select
-              id="batch-recipe"
-              value={recipeId}
-              onChange={(e) => handleRecipeChange(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Select…</option>
-              {recipes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-            <FieldError messages={fieldErrors.recipe} />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label htmlFor="batch-size" className={labelClass}>
-                Batch size (g)
+        <Card className="p-5">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+            <div>
+              <label htmlFor="batch-recipe" className={labelClass}>
+                Recipe
               </label>
-              <input
-                id="batch-size"
-                value={batchSizeG}
-                onChange={(e) => setBatchSizeG(e.target.value)}
+              <select
+                id="batch-recipe"
+                value={recipeId}
+                onChange={(e) => handleRecipeChange(e.target.value)}
                 className={inputClass}
-              />
-              <FieldError messages={fieldErrors.batch_size_g} />
+              >
+                <option value="">Select…</option>
+                {recipes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <FieldError messages={fieldErrors.recipe} />
             </div>
-            <div className="flex-1">
-              <label htmlFor="batch-concentration" className={labelClass}>
-                Concentration (%)
-              </label>
-              <input
-                id="batch-concentration"
-                value={concentration}
-                onChange={(e) => setConcentration(e.target.value)}
-                className={inputClass}
-              />
-              <FieldError messages={fieldErrors.concentration} />
-            </div>
-          </div>
 
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label htmlFor="batch-made-on" className={labelClass}>
-                Made on
-              </label>
-              <input
-                id="batch-made-on"
-                type="date"
-                value={madeOn}
-                onChange={(e) => setMadeOn(e.target.value)}
-                className={inputClass}
-              />
-              <FieldError messages={fieldErrors.made_on} />
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex-1">
+                <label htmlFor="batch-size" className={labelClass}>
+                  Batch size (g)
+                </label>
+                <input
+                  id="batch-size"
+                  value={batchSizeG}
+                  onChange={(e) => setBatchSizeG(e.target.value)}
+                  className={inputClass}
+                />
+                <FieldError messages={fieldErrors.batch_size_g} />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="batch-concentration" className={labelClass}>
+                  Concentration (%)
+                </label>
+                <input
+                  id="batch-concentration"
+                  value={concentration}
+                  onChange={(e) => setConcentration(e.target.value)}
+                  className={inputClass}
+                />
+                <FieldError messages={fieldErrors.concentration} />
+              </div>
             </div>
-            <div className="flex-1">
-              <label htmlFor="batch-maceration-days" className={labelClass}>
-                Maceration days
-              </label>
-              <input
-                id="batch-maceration-days"
-                value={macerationDays}
-                onChange={(e) => setMacerationDays(e.target.value)}
-                className={inputClass}
-              />
-              <FieldError messages={fieldErrors.maceration_days} />
+
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex-1">
+                <label htmlFor="batch-made-on" className={labelClass}>
+                  Made on
+                </label>
+                <input
+                  id="batch-made-on"
+                  type="date"
+                  value={madeOn}
+                  onChange={(e) => setMadeOn(e.target.value)}
+                  className={inputClass}
+                />
+                <FieldError messages={fieldErrors.made_on} />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="batch-maceration-days" className={labelClass}>
+                  Maceration days
+                </label>
+                <input
+                  id="batch-maceration-days"
+                  value={macerationDays}
+                  onChange={(e) => setMacerationDays(e.target.value)}
+                  className={inputClass}
+                />
+                <FieldError messages={fieldErrors.maceration_days} />
+              </div>
             </div>
-          </div>
 
-          {formError && <p className="text-danger text-sm">{formError}</p>}
+            {formError && <p className="text-danger text-sm">{formError}</p>}
 
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={createMutation.isPending || !recipeId || !batchSizeG}
-              className={primaryButtonClass}
-            >
-              {createMutation.isPending ? 'Creating…' : 'Create batch'}
-            </button>
-            <button type="button" onClick={() => navigate('/batches')} className={secondaryButtonClass}>
-              Cancel
-            </button>
-          </div>
-        </form>
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={createMutation.isPending || !recipeId || !batchSizeG}
+                className={primaryButtonClass}
+              >
+                {createMutation.isPending ? 'Creating…' : 'Create batch'}
+              </button>
+              <button type="button" onClick={() => navigate('/batches')} className={secondaryButtonClass}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Card>
       )}
 
       {recipe && preview && (
-        <section className="border-border mt-8 rounded-lg border p-5">
+        <Card className="mt-8 p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-ink text-lg font-medium">Preview</h2>
             <span className="text-ink-muted text-xs">Server-computed values are frozen on save</span>
@@ -207,7 +207,7 @@ export function BatchNewPage() {
               {preview.ingredients.map((ing) => (
                 <li
                   key={ing.ingredientId}
-                  className="border-border flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                  className="border-border rounded-field flex items-center justify-between border px-3 py-2 text-sm"
                 >
                   <span className="text-ink">{ing.ingredientName}</span>
                   <span className="text-ink-muted">{ing.grams.toFixed(2)}g</span>
@@ -215,7 +215,7 @@ export function BatchNewPage() {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       )}
     </div>
   )

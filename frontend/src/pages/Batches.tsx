@@ -4,19 +4,12 @@ import { useQuery } from '@tanstack/react-query'
 import { listBatches, type Batch, type BatchListParams } from '../api/batches'
 import { listRecipes } from '../api/recipes'
 import { MacerationBar } from '../components/MacerationBar'
-import { inputClass, labelClass } from '../components/formStyles'
-
-const STATUS_LABELS: Record<string, string> = {
-  macerating: 'Macerating',
-  ready: 'Ready',
-  archived: 'Archived',
-}
-
-function statusChipClass(status: string): string {
-  if (status === 'ready') return 'text-accent border-accent'
-  if (status === 'archived') return 'text-ink-muted border-border'
-  return 'text-ink-muted border-border'
-}
+import { PageHeader } from '../components/PageHeader'
+import { Card } from '../components/Card'
+import { EmptyState } from '../components/EmptyState'
+import { Spinner } from '../components/Spinner'
+import { BatchStatusChip, DueChip } from '../components/StatusChip'
+import { inputClass, labelClass, primaryButtonClass } from '../components/formStyles'
 
 export function BatchesPage() {
   const [status, setStatus] = useState('')
@@ -35,15 +28,14 @@ export function BatchesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-ink text-2xl font-medium tracking-tight">Batches</h1>
-        <Link
-          to="/batches/new"
-          className="bg-accent text-accent-ink rounded-md px-3 py-2 text-sm font-medium transition-opacity"
-        >
-          New batch
-        </Link>
-      </div>
+      <PageHeader
+        title="Batches"
+        action={
+          <Link to="/batches/new" className={primaryButtonClass}>
+            New batch
+          </Link>
+        }
+      />
 
       <div className="mb-6 flex flex-wrap items-end gap-4">
         <div className="w-44">
@@ -68,9 +60,18 @@ export function BatchesPage() {
         </label>
       </div>
 
-      {isLoading && <p className="text-ink-muted text-sm">Loading…</p>}
+      {isLoading && <Spinner />}
       {isError && <p className="text-danger text-sm">Couldn't load batches.</p>}
-      {batches && batches.length === 0 && <p className="text-ink-muted text-sm">No batches yet.</p>}
+      {batches && batches.length === 0 && (
+        <EmptyState
+          message="No batches yet — mix your first one."
+          action={
+            <Link to="/batches/new" className={primaryButtonClass}>
+              New batch
+            </Link>
+          }
+        />
+      )}
 
       {batches && batches.length > 0 && (
         <ul className="flex flex-col gap-3">
@@ -92,7 +93,7 @@ function BatchCard({ batch, recipeName }: { batch: Batch; recipeName: string }) 
     daysRemaining < 0 ? `overdue by ${Math.abs(daysRemaining)}d` : `${daysRemaining}d remaining`
 
   return (
-    <div className="border-border rounded-md border px-4 py-3">
+    <Card className="px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-ink text-sm font-medium">{recipeName}</div>
@@ -102,14 +103,8 @@ function BatchCard({ batch, recipeName }: { batch: Batch; recipeName: string }) 
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {batch.is_due && (
-            <span className="text-danger border-danger rounded-full border px-2 py-0.5 text-xs whitespace-nowrap">
-              Due
-            </span>
-          )}
-          <span className={`rounded-full border px-2 py-0.5 text-xs whitespace-nowrap ${statusChipClass(status)}`}>
-            {STATUS_LABELS[status] ?? status}
-          </span>
+          {batch.is_due && <DueChip />}
+          <BatchStatusChip status={status} />
         </div>
       </div>
 
@@ -124,6 +119,6 @@ function BatchCard({ batch, recipeName }: { batch: Batch; recipeName: string }) 
           </div>
         </div>
       )}
-    </div>
+    </Card>
   )
 }

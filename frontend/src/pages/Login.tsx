@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { parseApiError, type FieldErrors } from '../api/errors'
+import { FieldError } from '../components/FieldError'
+import { Card } from '../components/Card'
+import { inputClass, labelClass, primaryButtonClass } from '../components/formStyles'
 
 interface LocationState {
   from?: { pathname: string }
@@ -41,12 +44,13 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="border-border bg-surface-raised w-full max-w-sm rounded-lg border p-8">
-        <h1 className="text-ink mb-6 text-xl font-medium tracking-tight">Fragrance Lab</h1>
+      <Card className="w-full max-w-sm p-8">
+        <h1 className="text-ink mb-1 text-xl font-medium tracking-tight">Fragrance Lab</h1>
+        <p className="text-ink-muted mb-6 text-sm">Sign in to manage your recipes and batches.</p>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <div>
-            <label htmlFor="username" className="text-ink-muted mb-1 block text-sm">
+            <label htmlFor="username" className={labelClass}>
               Username
             </label>
             <input
@@ -56,15 +60,13 @@ export function LoginPage() {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="border-border bg-surface text-ink focus:border-accent w-full rounded-md border px-3 py-2 text-sm outline-none"
+              className={inputClass}
             />
-            {fieldErrors.username && (
-              <p className="text-danger mt-1 text-sm">{fieldErrors.username.join(' ')}</p>
-            )}
+            <FieldError messages={fieldErrors.username} />
           </div>
 
           <div>
-            <label htmlFor="password" className="text-ink-muted mb-1 block text-sm">
+            <label htmlFor="password" className={labelClass}>
               Password
             </label>
             <input
@@ -74,24 +76,18 @@ export function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border-border bg-surface text-ink focus:border-accent w-full rounded-md border px-3 py-2 text-sm outline-none"
+              className={inputClass}
             />
-            {fieldErrors.password && (
-              <p className="text-danger mt-1 text-sm">{fieldErrors.password.join(' ')}</p>
-            )}
+            <FieldError messages={fieldErrors.password} />
           </div>
 
           {formError && <p className="text-danger text-sm">{formError}</p>}
 
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="bg-accent text-accent-ink mt-2 rounded-md px-3 py-2 text-sm font-medium transition-opacity disabled:opacity-60"
-          >
+          <button type="submit" disabled={mutation.isPending} className={`${primaryButtonClass} mt-2`}>
             {mutation.isPending ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-      </div>
+      </Card>
     </div>
   )
 }
