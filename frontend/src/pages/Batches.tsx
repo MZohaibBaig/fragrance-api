@@ -92,7 +92,7 @@ function BatchCard({ batch, recipeName }: { batch: Batch; recipeName: string }) 
     daysRemaining < 0 ? `overdue by ${Math.abs(daysRemaining)}d` : `${daysRemaining}d remaining`
 
   return (
-    <div className="border-border rounded-md border px-4 py-3">
+    <Link to={`/batches/${batch.id}`} className="border-border block rounded-md border px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-ink text-sm font-medium">{recipeName}</div>
@@ -124,6 +124,6 @@ function BatchCard({ batch, recipeName }: { batch: Batch; recipeName: string }) 
           </div>
         </div>
       )}
-    </div>
+    </Link>
   )
 }
