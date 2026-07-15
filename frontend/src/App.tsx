@@ -8,6 +8,7 @@ import { RecipesPage } from './pages/Recipes'
 import { RecipeDetailPage } from './pages/RecipeDetail'
 import { BatchesPage } from './pages/Batches'
 import { BatchNewPage } from './pages/BatchNew'
+import { BatchDetailPage } from './pages/BatchDetail'
 
 function ProtectedLayout() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/recipes/:id" element={<RecipeDetailPage />} />
         <Route path="/batches" element={<BatchesPage />} />
         <Route path="/batches/new" element={<BatchNewPage />} />
+        <Route path="/batches/:id" element={<BatchDetailPage />} />
       </Route>
     </Routes>
   )

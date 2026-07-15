@@ -4,6 +4,7 @@ import type { components } from './types'
 export type Batch = components['schemas']['Batch']
 export type BatchIngredient = components['schemas']['BatchIngredient']
 export type BatchNote = components['schemas']['BatchNote']
+export type BatchStatus = components['schemas']['StatusEnum']
 
 interface PaginatedBatches {
   count: number
