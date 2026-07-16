@@ -1,16 +1,16 @@
 # Fragrance Lab API
 
-**Live demo:** https://fragrance-api-eight.vercel.app  
+**Live demo:** https://fragrance-api-eight.vercel.app    
 **API docs (Swagger):** https://web-production-265e0.up.railway.app/api/docs/
 
-> Create an account on the login screen to try it, or use the demo login below.
+> Create an account on the login screen to try it, or use the demo login below.  
 > Demo user: `demo` / `demopass123`
 
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-6.0-092E20?logo=django&logoColor=white)
-![DRF](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-4169E1?logo=postgresql&logoColor=white)
-![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)  
+![Django](https://img.shields.io/badge/Django-6.0-092E20?logo=django&logoColor=white)  
+![DRF](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)  
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-4169E1?logo=postgresql&logoColor=white)  
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)  
 ![Tests](https://github.com/MZohaibBaig/fragrance-api/actions/workflows/tests.yml/badge.svg)
 
 A REST API for DIY perfumery: recipes and the physical batches mixed from them, tracked by weight.
@@ -25,22 +25,22 @@ A finished perfume is an aromatic phase (one or more fragrance materials) dissol
 
 Two levels of percentage, not to be confused:
 
-- **`Recipe.default_concentration`** — percent of the *finished perfume*, by weight, that is aromatic material (e.g. `22`).
+- **`Recipe.default_concentration`** — percent of the *finished perfume*, by weight, that is aromatic material (e.g. `22`).  
 - **`RecipeIngredient.proportion`** — each material's share *within the aromatic phase*, meant to sum to 100 across a recipe. A single-oil recipe is one row at 100.
 
 All percentages are weight-by-weight (w/w). A recipe doesn't have to sum to 100 to be saved — `Recipe.is_balanced` and `proportions_total` tell you when it's incomplete, they never block a save.
 
-**Worked example** — 40 g batch, 22% concentration, two oils at 60/40:
+**Worked example** — 40 g batch, 22% concentration, two oils at 60/40:  
 aromatic phase 8.8 g (oil A 5.28 g, oil B 3.52 g) → diluent 31.2 g. Total 40 g, exactly.
 
 Batch quantities are stored at full precision internally and rounded to 0.01 g (the scale's resolution) for display.
 
 ### Models
 
-- **`Ingredient`** — a raw material: name, supplier, article number, `dilution_strength` (reserved for future diluted-material math, unused in v1), `density_g_per_ml` (display-only), notes.
-- **`Recipe`** — a formula: name, `default_concentration`, `diluent_name`, `default_maceration_days`. Unique per owner by name.
-- **`RecipeIngredient`** — an ingredient's share of a recipe's aromatic phase.
-- **`Batch`** — one physical mix of a recipe: `batch_size_g` (unbounded), `concentration` and `maceration_days` (snapshotted from the recipe at creation, overridable), `made_on`, `status` (macerating / ready / archived), `rating`. Frozen at compute time: `aromatic_g`, `diluent_g`, `recipe_was_balanced`, and a per-ingredient `BatchIngredient` breakdown — all read-only from the API, never client-settable. Batches reference their recipe with `PROTECT`, so a recipe can't be deleted out from under lab history.
+- **`Ingredient`** — a raw material: name, supplier, article number, `dilution_strength` (reserved for future diluted-material math, unused in v1), `density_g_per_ml` (display-only), notes.  
+- **`Recipe`** — a formula: name, `default_concentration`, `diluent_name`, `default_maceration_days`. Unique per owner by name.  
+- **`RecipeIngredient`** — an ingredient's share of a recipe's aromatic phase.  
+- **`Batch`** — one physical mix of a recipe: `batch_size_g` (unbounded), `concentration` and `maceration_days` (snapshotted from the recipe at creation, overridable), `made_on`, `status` (macerating / ready / archived), `rating`. Frozen at compute time: `aromatic_g`, `diluent_g`, `recipe_was_balanced`, and a per-ingredient `BatchIngredient` breakdown — all read-only from the API, never client-settable. Batches reference their recipe with `PROTECT`, so a recipe can't be deleted out from under lab history.  
 - **`BatchNote`** — a dated smell-test note on a batch, with a derived `day_number` (days since `made_on`).
 
 Maceration is tracked, never automated: `is_due`, `days_macerating`, `ready_on`, `days_remaining`, and `maceration_progress` are all calendar-derived hints. `status` only ever changes via an explicit request — the calendar suggests, your nose decides.
@@ -65,49 +65,66 @@ Maceration is tracked, never automated: `is_due`, `days_macerating`, `ready_on`,
 
 ## Tech Stack
 
-- Python, Django, Django REST Framework, django-filter, django-cors-headers, drf-spectacular
-- PostgreSQL
-- JWT via djangorestframework-simplejwt
-- Logging via Django's standard `LOGGING` config (console handler; `formulations` logger emits INFO on every batch gram-math computation and user registration, WARNING on unbalanced-recipe batches and rejected weak passwords)
+- Python, Django, Django REST Framework, django-filter, django-cors-headers, drf-spectacular  
+- PostgreSQL  
+- JWT via djangorestframework-simplejwt  
+- Logging via Django's standard `LOGGING` config (console handler; `formulations` logger emits INFO on every batch gram-math computation and user registration, WARNING on unbalanced-recipe batches and rejected weak passwords)  
 - Linting/formatting via `ruff`, enforced locally through a `pre-commit` hook
+
+## Screenshots
+
+**Dashboard — batch activity at a glance**  
+<img width="700" alt="Dashboard" src="https://github.com/user-attachments/assets/b8fca639-826e-490d-812c-5cadece945f3" />
+
+**New batch with live calculator** — per-ingredient breakdown; server-computed values frozen on save  
+<img width="700" alt="New batch with live calculator" src="https://github.com/user-attachments/assets/a813a4ba-855e-4fc3-b8f2-f321f103f5cb" />
+
+**Batches — maceration progress tracking**  
+<img width="700" alt="Batches list" src="https://github.com/user-attachments/assets/e0ceefc6-57d1-40d7-b60d-b04fcdd53014" />
+
+**Recipes**  
+<img width="700" alt="Recipes" src="https://github.com/user-attachments/assets/f7b99de9-1f16-4e28-8340-40c91d26de8c" />
+
+**Ingredients — materials, suppliers, and tasting notes**  
+<img width="700" alt="Ingredients" src="https://github.com/user-attachments/assets/beb22715-5c7d-440b-a8be-16fffee3d37e" />  
 
 ## Setup
 
 Clone and enter the project:
 
-```bash
-git clone https://github.com/MZohaibBaig/fragrance-api.git
-cd fragrance-api
-python -m venv venv
+```bash  
+git clone https://github.com/MZohaibBaig/fragrance-api.git  
+cd fragrance-api  
+python -m venv venv  
 ```
 
 Activate the virtual environment:
 
-```bash
-# Windows (PowerShell / cmd)
+```bash  
+# Windows (PowerShell / cmd)  
 venv\Scripts\activate
 
-# macOS / Linux
-source venv/bin/activate
+# macOS / Linux  
+source venv/bin/activate  
 ```
 
 Install dependencies, configure environment, and run:
 
-```bash
-pip install -r requirements.txt
-cp .env.example .env    # Windows: copy .env.example .env
-# then open .env and fill in your real SECRET_KEY and DB credentials.
-# For local development also set DEBUG=True (or ALLOWED_HOSTS) and
-# CORS_ALLOWED_ORIGINS to your frontend's origin — see .env.example.
-python manage.py migrate
-python manage.py runserver
+```bash  
+pip install -r requirements.txt  
+cp .env.example .env    # Windows: copy .env.example .env  
+# then open .env and fill in your real SECRET_KEY and DB credentials.  
+# For local development also set DEBUG=True (or ALLOWED_HOSTS) and  
+# CORS_ALLOWED_ORIGINS to your frontend's origin — see .env.example.  
+python manage.py migrate  
+python manage.py runserver  
 ```
 
 For linting/formatting/pre-commit, install the dev extras instead and wire up the hook once:
 
-```bash
-pip install -r requirements-dev.txt
-pre-commit install
+```bash  
+pip install -r requirements-dev.txt  
+pre-commit install  
 ```
 
 `pre-commit` then runs `ruff check --fix` and `ruff format` on every commit. Run it against the whole tree any time with `pre-commit run --all-files`.
@@ -116,8 +133,8 @@ pre-commit install
 
 Populate a user's account with realistic sample ingredients and recipes (idempotent — safe to re-run):
 
-```bash
-python manage.py seed_demo --user <username>
+```bash  
+python manage.py seed_demo --user <username>  
 ```
 
 Seeds ~12 perfumery materials (Bergamot, Hedione, Ambroxan, Vetiver, ...) and 3 invented recipes at different concentrations, each with proportions summing to 100.
@@ -128,25 +145,25 @@ Interactive Swagger UI is served at `/api/docs/` (raw OpenAPI schema at `/api/sc
 
 ## API Endpoints
 
-| Method | Endpoint                     | Description                                  |
-| ------ | ----------------------------- | --------------------------------------------- |
-| POST   | /api/register/                 | Create an account (rate-limited to 5/hour per IP) |
-| POST   | /api/token/                    | Get access and refresh tokens                 |
-| POST   | /api/token/refresh/            | Refresh access token                          |
-| GET    | /api/ingredients/               | List ingredients                              |
-| POST   | /api/ingredients/               | Create ingredient                             |
-| GET/PUT/PATCH/DELETE | /api/ingredients/{id}/  | Retrieve / update / delete ingredient          |
-| GET    | /api/recipes/                   | List recipes                                  |
-| POST   | /api/recipes/                   | Create recipe                                 |
-| GET/PUT/PATCH/DELETE | /api/recipes/{id}/      | Retrieve / update / delete recipe              |
-| GET    | /api/recipe-ingredients/?recipe={id} | List a recipe's ingredient rows          |
-| POST   | /api/recipe-ingredients/        | Attach an ingredient to a recipe at a proportion |
-| GET/PUT/PATCH/DELETE | /api/recipe-ingredients/{id}/ | Retrieve / update / remove a recipe ingredient |
-| GET    | /api/batches/?recipe={id}&status={status}&is_due={true\|false} | List/filter batches |
-| POST   | /api/batches/                   | Mix a new batch                               |
-| GET/PUT/PATCH/DELETE | /api/batches/{id}/       | Retrieve / update / delete batch               |
-| GET    | /api/batch-notes/?batch={id}    | List a batch's smell-test notes               |
-| POST   | /api/batch-notes/                | Add a dated note                              |
+| Method | Endpoint                     | Description                                  |  
+| ------ | ----------------------------- | --------------------------------------------- |  
+| POST   | /api/register/                 | Create an account (rate-limited to 5/hour per IP) |  
+| POST   | /api/token/                    | Get access and refresh tokens                 |  
+| POST   | /api/token/refresh/            | Refresh access token                          |  
+| GET    | /api/ingredients/               | List ingredients                              |  
+| POST   | /api/ingredients/               | Create ingredient                             |  
+| GET/PUT/PATCH/DELETE | /api/ingredients/{id}/  | Retrieve / update / delete ingredient          |  
+| GET    | /api/recipes/                   | List recipes                                  |  
+| POST   | /api/recipes/                   | Create recipe                                 |  
+| GET/PUT/PATCH/DELETE | /api/recipes/{id}/      | Retrieve / update / delete recipe              |  
+| GET    | /api/recipe-ingredients/?recipe={id} | List a recipe's ingredient rows          |  
+| POST   | /api/recipe-ingredients/        | Attach an ingredient to a recipe at a proportion |  
+| GET/PUT/PATCH/DELETE | /api/recipe-ingredients/{id}/ | Retrieve / update / remove a recipe ingredient |  
+| GET    | /api/batches/?recipe={id}&status={status}&is_due={true\|false} | List/filter batches |  
+| POST   | /api/batches/                   | Mix a new batch                               |  
+| GET/PUT/PATCH/DELETE | /api/batches/{id}/       | Retrieve / update / delete batch               |  
+| GET    | /api/batch-notes/?batch={id}    | List a batch's smell-test notes               |  
+| POST   | /api/batch-notes/                | Add a dated note                              |  
 | GET/PUT/PATCH/DELETE | /api/batch-notes/{id}/   | Retrieve / update / remove a note              |
 
 List endpoints are paginated (20 per page, DRF's standard `?page=` param) and return `{"count", "next", "previous", "results"}`.
@@ -155,17 +172,17 @@ List endpoints are paginated (20 per page, DRF's standard `?page=` param) and re
 
 Register, then log in and include the access token on every request:
 
-```
-POST /api/register/
+```  
+POST /api/register/  
 { "username": "you", "email": "you@example.com", "password": "..." }
 
-POST /api/token/
-{ "username": "you", "password": "..." }
--> { "access": "...", "refresh": "..." }
+POST /api/token/  
+{ "username": "you", "password": "..." }  
+-> { "access": "...", "refresh": "..." }  
 ```
 
-```
-Authorization: Bearer <access>
+```  
+Authorization: Bearer <access>  
 ```
 
 `POST /api/token/refresh/` with `{ "refresh": "..." }` before the access token expires.
@@ -174,41 +191,41 @@ Authorization: Bearer <access>
 
 `GET /api/batches/{id}/` for a 40 g batch of a two-oil, 22%-concentration recipe, made 10 days ago:
 
-```json
-{
-  "id": 1,
-  "recipe": 1,
-  "batch_size_g": "40.00",
-  "concentration": "22.00",
-  "maceration_days": 28,
-  "made_on": "2026-07-04",
-  "status": "macerating",
-  "rating": null,
-  "created_at": "2026-07-14T08:48:34.379488Z",
-  "aromatic_g": "8.80",
-  "diluent_g": "31.20",
-  "recipe_was_balanced": true,
-  "days_macerating": 10,
-  "ready_on": "2026-08-01",
-  "days_remaining": 18,
-  "maceration_progress": "35.71",
-  "is_due": false,
-  "ingredients": [
-    { "id": 1, "ingredient": 2, "ingredient_name": "Bergamot", "proportion": "60.00", "grams": "5.28" },
-    { "id": 2, "ingredient": 3, "ingredient_name": "Sandalwood", "proportion": "40.00", "grams": "3.52" }
-  ],
-  "notes": [
-    { "id": 1, "batch": 1, "observed_on": "2026-07-07", "body": "Bright citrus top, ethanol still sharp.", "day_number": 3, "created_at": "2026-07-14T08:48:34.391120Z" }
-  ]
-}
+```json  
+{  
+  "id": 1,  
+  "recipe": 1,  
+  "batch_size_g": "40.00",  
+  "concentration": "22.00",  
+  "maceration_days": 28,  
+  "made_on": "2026-07-04",  
+  "status": "macerating",  
+  "rating": null,  
+  "created_at": "2026-07-14T08:48:34.379488Z",  
+  "aromatic_g": "8.80",  
+  "diluent_g": "31.20",  
+  "recipe_was_balanced": true,  
+  "days_macerating": 10,  
+  "ready_on": "2026-08-01",  
+  "days_remaining": 18,  
+  "maceration_progress": "35.71",  
+  "is_due": false,  
+  "ingredients": [  
+    { "id": 1, "ingredient": 2, "ingredient_name": "Bergamot", "proportion": "60.00", "grams": "5.28" },  
+    { "id": 2, "ingredient": 3, "ingredient_name": "Sandalwood", "proportion": "40.00", "grams": "3.52" }  
+  ],  
+  "notes": [  
+    { "id": 1, "batch": 1, "observed_on": "2026-07-07", "body": "Bright citrus top, ethanol still sharp.", "day_number": 3, "created_at": "2026-07-14T08:48:34.391120Z" }  
+  ]  
+}  
 ```
 
 `aromatic_g`, `diluent_g`, `recipe_was_balanced`, and `ingredients[].grams` are computed and frozen server-side at batch-creation time — a client cannot set them. `days_macerating`, `ready_on`, `days_remaining`, `maceration_progress`, and `is_due` are recomputed on every read from `made_on`/`maceration_days`/`status`; none of them are stored.
 
 ## Running Tests
 
-```bash
-python manage.py test
+```bash  
+python manage.py test  
 ```
 
 Tests run against a real PostgreSQL test database (created and torn down automatically) and cover: authentication, cross-user ownership isolation on ingredients/recipes/batches (including cross-user FK injection via `recipe-ingredients`), the gram math (single- and multi-ingredient batches, a 4 g tester, a 20,000 g production run, and exact-sum/no-Decimal-drift checks), that a half-built recipe can be saved without blocking, that derived batch fields can't be forged by a client, maceration/`is_due` logic (including that overdue status never auto-flips), and registration. CI runs the same suite on every push and pull request against a Postgres service container (see `.github/workflows/tests.yml`).
