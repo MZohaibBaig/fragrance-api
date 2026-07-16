@@ -7,6 +7,7 @@ from .views import (
     IngredientViewSet,
     RecipeIngredientViewSet,
     RecipeViewSet,
+    SummarizeNoteView,
 )
 
 router = DefaultRouter()
@@ -17,5 +18,6 @@ router.register(r'batches', BatchViewSet, basename='batch')
 router.register(r'batch-notes', BatchNoteViewSet, basename='batch-note')
 
 urlpatterns = [
+    path('ai/summarize-note/', SummarizeNoteView.as_view(), name='ai-summarize-note'),
     path('', include(router.urls)),
 ]

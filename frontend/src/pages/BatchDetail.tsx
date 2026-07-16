@@ -1,13 +1,16 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
 import { getBatch, updateBatch, type Batch, type BatchNote, type BatchStatus } from '../api/batches'
 import { getRecipe } from '../api/recipes'
 import { createBatchNote, updateBatchNote, deleteBatchNote } from '../api/batchNotes'
+import { summarizeNote, type NoteSummary } from '../api/ai'
 import { parseApiError, formLevelError, type FieldErrors } from '../api/errors'
 import { FieldError } from '../components/FieldError'
 import { MacerationBar } from '../components/MacerationBar'
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from '../components/formStyles'
+import { chipClass } from '../components/ui'
 
 const STATUS_LABELS: Record<string, string> = {
   macerating: 'Macerating',
@@ -355,6 +358,18 @@ function NoteItem({ note, onChanged }: { note: BatchNote; onChanged: () => void 
     },
   })
 
+  const summarizeMutation = useMutation({
+    mutationFn: () => summarizeNote(note.id),
+  })
+
+  function summarizeErrorMessage(): string {
+    const error = summarizeMutation.error
+    if (error instanceof AxiosError && error.response?.status === 503) {
+      return 'AI not configured / unavailable'
+    }
+    return formLevelError(parseApiError(error)) ?? 'Could not summarize this note.'
+  }
+
   function handleSaveEdit(event: FormEvent): void {
     event.preventDefault()
     setFieldErrors({})
@@ -431,6 +446,14 @@ function NoteItem({ note, onChanged }: { note: BatchNote; onChanged: () => void 
           <div className="text-ink">{note.body}</div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => summarizeMutation.mutate()}
+            disabled={summarizeMutation.isPending}
+            className="text-ink-muted hover:text-ink text-xs"
+          >
+            {summarizeMutation.isPending ? 'Summarizing…' : 'Summarize'}
+          </button>
           <button type="button" onClick={() => setEditing(true)} className="text-ink-muted hover:text-ink text-xs">
             Edit
           </button>
@@ -440,6 +463,23 @@ function NoteItem({ note, onChanged }: { note: BatchNote; onChanged: () => void 
         </div>
       </div>
       {deleteMutation.isError && <p className="text-danger mt-1 text-xs">Couldn't delete this note.</p>}
+      {summarizeMutation.isError && <p className="text-danger mt-2 text-xs">{summarizeErrorMessage()}</p>}
+      {summarizeMutation.isSuccess && <NoteSummaryView summary={summarizeMutation.data} />}
     </li>
+  )
+}
+
+function NoteSummaryView({ summary }: { summary: NoteSummary }) {
+  return (
+    <div className="border-border mt-2 rounded-md border border-dashed px-3 py-2">
+      <p className="text-ink text-xs">{summary.summary}</p>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {summary.tags.map((tag) => (
+          <span key={tag} className={chipClass('neutral')}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }

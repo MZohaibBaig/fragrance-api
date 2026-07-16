@@ -1,13 +1,16 @@
+import os
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Batch, BatchIngredient, Ingredient, Recipe, RecipeIngredient
+from . import views as ai_views
+from .models import Batch, BatchIngredient, BatchNote, Ingredient, Recipe, RecipeIngredient
 
 
 class AuthenticationTests(APITestCase):
@@ -447,3 +450,94 @@ class IngredientDeleteProtectionTests(APITestCase):
         self.assertIn('Citrus Bloom', response.data['detail'])
         self.assertTrue(Ingredient.objects.filter(id=self.ingredient.id).exists())
         self.assertFalse(User.objects.filter(username='new_perfumer').exists())
+
+
+class _FixedRateThrottle(ai_views.AISummarizeThrottle):
+    """Overrides the configured rate so tests can trip the limit without a slow window."""
+
+    def get_rate(self) -> str:
+        return '3/hour'
+
+
+class AISummarizeNoteTests(APITestCase):
+    def setUp(self) -> None:
+        cache.clear()
+        self.user_a = User.objects.create_user(username='user_a', password='password123')
+        self.user_b = User.objects.create_user(username='user_b', password='password123')
+        self.recipe = Recipe.objects.create(
+            owner=self.user_a,
+            name='Citrus Bloom',
+            default_concentration=Decimal('20'),
+        )
+        self.batch = Batch.objects.create(
+            owner=self.user_a,
+            recipe=self.recipe,
+            batch_size_g=Decimal('40'),
+            concentration=Decimal('20'),
+            maceration_days=28,
+            made_on=timezone.localdate(),
+        )
+        self.batch.compute()
+        self.note = BatchNote.objects.create(batch=self.batch, observed_on=timezone.localdate(), body='Smells great.')
+
+    def test_unauthenticated_request_is_rejected(self) -> None:
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_cross_user_note_id_returns_404(self) -> None:
+        self.client.force_authenticate(user=self.user_b)
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_missing_api_key_returns_503(self) -> None:
+        os.environ.pop('GROQ_API_KEY', None)
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch('formulations.ai.httpx.post')
+    def test_successful_summary(self, mock_post) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'choices': [
+                {'message': {'content': '{"summary": "Aging well.", "tags": ["citrus", "bright"]}'}},
+            ],
+        }
+
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['summary'], 'Aging well.')
+        self.assertEqual(response.data['tags'], ['citrus', 'bright'])
+
+    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch('formulations.ai.httpx.post')
+    def test_unparseable_groq_response_returns_502(self, mock_post) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'choices': [{'message': {'content': 'not json at all'}}],
+        }
+
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+
+    @patch.object(ai_views.SummarizeNoteView, 'throttle_classes', [_FixedRateThrottle])
+    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch('formulations.ai.httpx.post')
+    def test_throttle_is_attached_and_trips_after_limit(self, mock_post) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'choices': [{'message': {'content': '{"summary": "ok", "tags": ["a"]}'}}],
+        }
+
+        self.client.force_authenticate(user=self.user_a)
+        for _ in range(3):
+            response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
