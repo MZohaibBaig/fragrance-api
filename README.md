@@ -68,6 +68,7 @@ Maceration is tracked, never automated: `is_due`, `days_macerating`, `ready_on`,
 - Python, Django, Django REST Framework, django-filter, django-cors-headers, drf-spectacular  
 - PostgreSQL  
 - JWT via djangorestframework-simplejwt  
+- AI note summarization via Groq's API (server-side call, API key from env, rate-limited to 20/hour per user, mocked in tests)  
 - Logging via Django's standard `LOGGING` config (console handler; `formulations` logger emits INFO on every batch gram-math computation and user registration, WARNING on unbalanced-recipe batches and rejected weak passwords)  
 - Linting/formatting via `ruff`, enforced locally through a `pre-commit` hook
 
