@@ -4,12 +4,15 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import ProtectedError, QuerySet
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.views import APIView
 
+from . import ai
 from .filters import BatchFilterSet
 from .models import Batch, BatchNote, Ingredient, Recipe, RecipeIngredient
 from .permissions import IsOwner
@@ -107,6 +110,44 @@ class BatchNoteViewSet(viewsets.ModelViewSet):
         if getattr(self, 'swagger_fake_view', False):
             return BatchNote.objects.none()
         return BatchNote.objects.filter(batch__owner=self.request.user).select_related('batch')
+
+
+class AISummarizeThrottle(UserRateThrottle):
+    scope = 'ai_summarize'
+
+
+class SummarizeNoteSerializer(serializers.Serializer):
+    note_id = serializers.IntegerField()
+
+
+class SummarizeNoteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AISummarizeThrottle]
+
+    def post(self, request) -> Response:
+        serializer = SummarizeNoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        note = get_object_or_404(
+            BatchNote.objects.select_related('batch'),
+            id=serializer.validated_data['note_id'],
+            batch__owner=request.user,
+        )
+
+        try:
+            result = ai.summarize_note(note.body)
+        except ai.AINotConfigured:
+            logger.warning('AI summarize failed: not configured (user=%s)', request.user.username)
+            return Response({'detail': 'AI not configured'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ai.AIServiceError:
+            logger.warning('AI summarize failed: Groq unavailable (user=%s)', request.user.username)
+            return Response({'detail': 'AI service unavailable'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ai.AIResponseUnparseable:
+            logger.warning('AI summarize failed: unparseable response (user=%s)', request.user.username)
+            return Response({'detail': 'AI returned an unexpected response'}, status=status.HTTP_502_BAD_GATEWAY)
+
+        logger.info('AI summarize succeeded for note=%s (user=%s)', note.id, request.user.username)
+        return Response(result)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
