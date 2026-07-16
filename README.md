@@ -1,5 +1,11 @@
 # Fragrance Lab API
 
+**Live demo:** https://fragrance-api-eight.vercel.app  
+**API docs (Swagger):** https://web-production-265e0.up.railway.app/api/docs/
+
+> Create an account on the login screen to try it, or use the demo login below.
+> Demo user: `demo` / `demopass123`
+
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-6.0-092E20?logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)
