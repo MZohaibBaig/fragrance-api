@@ -525,6 +525,17 @@ class AISummarizeNoteTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
 
+    @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
+    @patch('formulations.ai.httpx.post')
+    def test_missing_choices_in_groq_response_returns_502(self, mock_post) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {'choices': []}
+
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
+
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+
     @patch.object(ai_views.SummarizeNoteView, 'throttle_classes', [_FixedRateThrottle])
     @patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'})
     @patch('formulations.ai.httpx.post')

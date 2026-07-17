@@ -230,3 +230,7 @@ python manage.py test
 ```
 
 Tests run against a real PostgreSQL test database (created and torn down automatically) and cover: authentication, cross-user ownership isolation on ingredients/recipes/batches (including cross-user FK injection via `recipe-ingredients`), the gram math (single- and multi-ingredient batches, a 4 g tester, a 20,000 g production run, and exact-sum/no-Decimal-drift checks), that a half-built recipe can be saved without blocking, that derived batch fields can't be forged by a client, maceration/`is_due` logic (including that overdue status never auto-flips), and registration. CI runs the same suite on every push and pull request against a Postgres service container (see `.github/workflows/tests.yml`).
+
+## License
+
+MIT — see [LICENSE](LICENSE).

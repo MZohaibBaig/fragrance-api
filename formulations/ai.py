@@ -59,14 +59,13 @@ def summarize_note(body: str) -> dict:
     if response.status_code >= 400:
         raise AIResponseUnparseable(f'Groq returned client error {response.status_code}')
 
-    content = response.json()['choices'][0]['message']['content'].strip()
-    content = content.removeprefix('```json').removeprefix('```').removesuffix('```').strip()
-
     try:
+        content = response.json()['choices'][0]['message']['content'].strip()
+        content = content.removeprefix('```json').removeprefix('```').removesuffix('```').strip()
         parsed = json.loads(content)
         summary = str(parsed['summary'])
         tags = [str(tag) for tag in parsed['tags']]
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError) as exc:
         raise AIResponseUnparseable('Could not parse Groq response as the expected JSON shape') from exc
 
     return {'summary': summary, 'tags': tags}
