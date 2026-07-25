@@ -231,6 +231,22 @@ python manage.py test
 
 Tests run against a real PostgreSQL test database (created and torn down automatically) and cover: authentication, cross-user ownership isolation on ingredients/recipes/batches (including cross-user FK injection via `recipe-ingredients`), the gram math (single- and multi-ingredient batches, a 4 g tester, a 20,000 g production run, and exact-sum/no-Decimal-drift checks), that a half-built recipe can be saved without blocking, that derived batch fields can't be forged by a client, maceration/`is_due` logic (including that overdue status never auto-flips), and registration. CI runs the same suite on every push and pull request against a Postgres service container (see `.github/workflows/tests.yml`).
 
+## Known gaps & non-goals
+
+Commercial perfumery software covers ground this doesn't. Each omission below is a scope decision for a single-user lab notebook, not an oversight.
+
+**IFRA compliance.** No limit checking, no conformity certificates. Compliance is what matters when a fragrance is *sold* — it carries real liability and depends on licensed standards data this project doesn't ship. A personal lab notebook doesn't cross that line.
+
+**Cost tracking.** No cost per gram, batch cost, or margin. `Ingredient` already stores supplier and article number, so the field would be cheap to add — it just doesn't answer the question this app exists to answer: what did I mix, and when is it ready.
+
+**Accords / nested formulas.** A recipe can't contain another recipe. This is the most interesting deferred item, and the only one that isn't just another field: it's recursive composition, cycle detection, and gram math that resolves through arbitrary depth.
+
+**Exports.** No PDF or CSV. Every object is already retrievable as JSON through the documented API, so this is presentation work rather than missing capability.
+
+**Note classification.** No top/heart/base pyramid or volatility analysis. That needs per-material substantivity data the app never collects — `Ingredient.notes` is deliberately free text.
+
+**Scheduled notifications.** No email or push when a batch finishes macerating. `is_due` is computed on read, so the dashboard answers "what needs attention today" the moment it's opened. A notification pipeline would mean a scheduler, a queue, and a transactional email provider — continuously-running infrastructure for a reminder the app already surfaces on open.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
