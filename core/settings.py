@@ -40,6 +40,20 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
 
 
+# Production security hardening - inert under DEBUG=True so local HTTP dev keeps working.
+# SECURE_SSL_REDIRECT has its own env var (defaulting to the same not-DEBUG behaviour) so it
+# can be turned off in CI, where DEBUG is also False but requests never arrive over TLS.
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', str(not DEBUG)) == 'True'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else None
+# Conservative starting value per Django's own HSTS rollout guidance - no subdomains/preload
+# yet, raise the duration once TLS is confirmed reliable everywhere this is served.
+SECURE_HSTS_SECONDS = 604800 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -65,6 +79,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'register': '5/hour',
         'ai_summarize': '20/hour',
+        'token_obtain': '5/minute',
+        'token_refresh': '20/minute',
     },
 }
 
