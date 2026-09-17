@@ -552,3 +552,56 @@ class AISummarizeNoteTests(APITestCase):
 
         response = self.client.post('/api/ai/summarize-note/', {'note_id': self.note.id})
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class _FixedLoginThrottle(ai_views.TokenObtainThrottle):
+    """Overrides the configured rate so tests can trip the limit without a slow window."""
+
+    def get_rate(self) -> str:
+        return '3/minute'
+
+
+class _FixedRefreshThrottle(ai_views.TokenRefreshThrottle):
+    """Overrides the configured rate so tests can trip the limit without a slow window."""
+
+    def get_rate(self) -> str:
+        return '3/minute'
+
+
+class TokenObtainThrottleTests(APITestCase):
+    def setUp(self) -> None:
+        cache.clear()
+        User.objects.create_user(username='formulator', password='password123')
+
+    @patch.object(ai_views.ThrottledTokenObtainPairView, 'throttle_classes', [_FixedLoginThrottle])
+    def test_throttle_is_attached_and_trips_after_limit(self) -> None:
+        for _ in range(3):
+            response = self.client.post('/api/token/', {'username': 'formulator', 'password': 'password123'})
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post('/api/token/', {'username': 'formulator', 'password': 'password123'})
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class TokenRefreshThrottleTests(APITestCase):
+    def setUp(self) -> None:
+        cache.clear()
+        User.objects.create_user(username='formulator', password='password123')
+        response = self.client.post('/api/token/', {'username': 'formulator', 'password': 'password123'})
+        self.refresh_token = response.data['refresh']
+
+    @patch.object(ai_views.ThrottledTokenRefreshView, 'throttle_classes', [_FixedRefreshThrottle])
+    def test_throttle_is_attached_and_trips_after_limit(self) -> None:
+        for _ in range(3):
+            response = self.client.post('/api/token/refresh/', {'refresh': self.refresh_token})
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post('/api/token/refresh/', {'refresh': self.refresh_token})
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class HealthCheckTests(APITestCase):
+    def test_health_check_returns_200(self) -> None:
+        response = self.client.get('/health/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['status'], 'ok')

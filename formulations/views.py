@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import ai
 from .filters import BatchFilterSet
@@ -183,3 +184,19 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RegisterThrottle]
+
+
+class TokenObtainThrottle(AnonRateThrottle):
+    scope = 'token_obtain'
+
+
+class TokenRefreshThrottle(AnonRateThrottle):
+    scope = 'token_refresh'
+
+
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    throttle_classes = [TokenObtainThrottle]
+
+
+class ThrottledTokenRefreshView(TokenRefreshView):
+    throttle_classes = [TokenRefreshThrottle]
