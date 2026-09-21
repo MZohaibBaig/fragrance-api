@@ -82,6 +82,7 @@ REST_FRAMEWORK = {
         'token_obtain': '5/minute',
         'token_refresh': '20/minute',
     },
+    'NUM_PROXIES': 1,
 }
 
 SPECTACULAR_SETTINGS = {
