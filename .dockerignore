@@ -1,0 +1,42 @@
+# Secrets & local env files — keep .env.example included
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django collected static (regenerated at container start via collectstatic)
+staticfiles/
+
+# Frontend — Vercel deploys separately; never included in the backend image
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+frontend/dist/
+
+# Version control
+.git/
+.gitattributes
+.gitignore
+
+# Test / lint / cache tooling
+.pytest_cache/
+.ruff_cache/
+tests/
+*.md
+
+# Editor / OS artifacts
+.vscode/
+.idea/
+*.DS_Store
+
+# Postman collections
+postman/
