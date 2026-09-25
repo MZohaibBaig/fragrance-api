@@ -7,7 +7,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 GROQ_CHAT_COMPLETIONS_URL = 'https://api.groq.com/openai/v1/chat/completions'
-DEFAULT_GROQ_MODEL = 'llama-3.3-70b-versatile'
+DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b'
 
 SYSTEM_PROMPT = (
     "You summarize a perfumer's batch observation note. "
