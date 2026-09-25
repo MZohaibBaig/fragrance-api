@@ -1,5 +1,7 @@
 # Deploy Checklist
 
+Railway builds this service from the repo's `Dockerfile`. **Custom Start Command must be left empty** — a leftover custom command once overrode the Dockerfile's `CMD` and the server never started.
+
 ## Railway (backend)
 - [ ] `SECRET_KEY` — random secret
 - [ ] `DEBUG` — `False`
