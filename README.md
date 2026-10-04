@@ -70,6 +70,7 @@ Maceration is tracked, never automated: `is_due`, `days_macerating`, `ready_on`,
 - JWT via djangorestframework-simplejwt  
 - AI note summarization via Groq's API (server-side call, API key from env, rate-limited to 20/hour per user, mocked in tests)  
 - Logging via Django's standard `LOGGING` config (console handler; `formulations` logger emits INFO on every batch gram-math computation and user registration, WARNING on unbalanced-recipe batches and rejected weak passwords)  
+- Hosted on Railway (backend) + Vercel (frontend)  
 - Linting/formatting via `ruff`, enforced locally through a `pre-commit` hook
 
 ## Screenshots
@@ -149,8 +150,9 @@ Interactive Swagger UI is served at `/api/docs/` (raw OpenAPI schema at `/api/sc
 | Method | Endpoint                     | Description                                  |  
 | ------ | ----------------------------- | --------------------------------------------- |  
 | POST   | /api/register/                 | Create an account (rate-limited to 5/hour per IP) |  
-| POST   | /api/token/                    | Get access and refresh tokens                 |  
-| POST   | /api/token/refresh/            | Refresh access token                          |  
+| POST   | /api/token/                    | Get access and refresh tokens (rate-limited to 5/minute per IP) |  
+| POST   | /api/token/refresh/            | Refresh access token (rate-limited to 20/minute per IP) |  
+| GET    | /health/                       | Health check (200 `{"status":"ok"}`, 503 if the database is unreachable) |  
 | GET    | /api/ingredients/               | List ingredients                              |  
 | POST   | /api/ingredients/               | Create ingredient                             |  
 | GET/PUT/PATCH/DELETE | /api/ingredients/{id}/  | Retrieve / update / delete ingredient          |  
