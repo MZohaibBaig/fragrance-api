@@ -30,13 +30,16 @@ COPY --chown=appuser . .
 
 USER appuser
 
+# collectstatic needs no database, only a SECRET_KEY to import settings. Run it at build
+# time with a throwaway key scoped to this one command (not an ENV, so it never reaches
+# the runtime image), which keeps container start fast when the service wakes from sleep.
+RUN SECRET_KEY=build-time-collectstatic-only python manage.py collectstatic --noinput
+
 # Expose the default port; the real port is controlled by $PORT at runtime
 EXPOSE 8000
 
 # Entrypoint: reproduce the Procfile sequence exactly.
-# migrate and collectstatic run at container start (not build time) because
-# they both need a live database / SECRET_KEY from the runtime environment.
+# migrate runs at container start because it needs the live database.
 CMD sh -c "\
     python manage.py migrate --noinput && \
-    python manage.py collectstatic --noinput && \
     exec gunicorn core.wsgi --bind 0.0.0.0:${PORT:-8000}"

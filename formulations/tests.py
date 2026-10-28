@@ -605,3 +605,15 @@ class HealthCheckTests(APITestCase):
         response = self.client.get('/health/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()['status'], 'ok')
+
+
+class RobotsTxtTests(APITestCase):
+    def test_robots_txt_disallows_all_crawlers(self) -> None:
+        response = self.client.get('/robots.txt')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'text/plain')
+        self.assertEqual(response.content.decode(), 'User-agent: *\nDisallow: /')
+
+    def test_robots_txt_rejects_non_get(self) -> None:
+        response = self.client.post('/robots.txt')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
