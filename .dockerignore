@@ -13,7 +13,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Django collected static (regenerated at container start via collectstatic)
+# Django collected static (regenerated at image build time via collectstatic)
 staticfiles/
 
 # Frontend — Vercel deploys separately; never included in the backend image

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { parseApiError, type FieldErrors } from '../api/errors'
+import { useSlowRequest } from '../api/slowRequest'
 import { FieldError } from '../components/FieldError'
 import { Card } from '../components/Card'
 import { inputClass, labelClass, primaryButtonClass } from '../components/formStyles'
@@ -15,6 +16,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const isSlow = useSlowRequest()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -82,6 +84,12 @@ export function LoginPage() {
           </div>
 
           {formError && <p className="text-danger text-sm">{formError}</p>}
+
+          {isSlow && (
+            <p role="status" className="text-ink-muted text-sm">
+              Waking up the server, the first request can take ~15 s.
+            </p>
+          )}
 
           <button type="submit" disabled={mutation.isPending} className={`${primaryButtonClass} mt-2`}>
             {mutation.isPending ? 'Signing in…' : 'Sign in'}

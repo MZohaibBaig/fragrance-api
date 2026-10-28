@@ -2,12 +2,13 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from core.views import health_check
+from core.views import health_check, robots_txt
 from formulations.views import RegisterView, ThrottledTokenObtainPairView, ThrottledTokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health-check'),
+    path('robots.txt', robots_txt, name='robots-txt'),
     path('api/', include('formulations.urls')),
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/token/', ThrottledTokenObtainPairView.as_view(), name='token_obtain_pair'),
